@@ -85,10 +85,8 @@ make
 │   ├── Game.cpp
 │   ├── Game.h
 │   ├── /core
-│   │   ├── ECS.h
 │   │   ├── EntityManager.cpp
 │   │   ├── EntityManager.h
-│   │   ├── Entity.cpp
 │   │   ├── Entity.h
 │   │   ├── Component.h
 │   │   ├── System.h

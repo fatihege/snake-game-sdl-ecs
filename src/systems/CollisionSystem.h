@@ -1,5 +1,8 @@
 #pragma once
 
-class CollisionSystem {
+#include "../core/System.h"
 
+class CollisionSystem : public System {
+public:
+    void update() override;
 };
