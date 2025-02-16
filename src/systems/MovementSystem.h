@@ -6,6 +6,6 @@
 
 class MovementSystem final : public System {
 public:
-    std::function<void()> onSelfCollision;
+    std::function<void()> onCollision;
     void update() override;
 };

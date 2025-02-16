@@ -31,15 +31,13 @@ void MovementSystem::update() {
             transform->x = snake->body[0].first;
             transform->y = snake->body[0].second;
 
-            const bool collidedWithEdge = transform->x < 0 || transform->y < 0 || transform->x > GRID_WIDTH
-                                          || transform->y > GRID_HEIGHT;
-
-            if (onSelfCollision) {
-                if (collidedWithEdge) onSelfCollision();
+            if (onCollision) {
+                if (transform->x < 0 || transform->y < 0 || transform->x > GRID_WIDTH || transform->y > GRID_HEIGHT)
+                    onCollision();
 
                 if (const std::pair headPos = {transform->x, transform->y};
                     std::find(snake->body.begin() + 1, snake->body.end(), headPos) != snake->body.end())
-                    onSelfCollision();
+                    onCollision();
             }
         }
     }

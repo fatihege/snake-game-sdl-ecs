@@ -7,6 +7,6 @@
 struct RenderComponent final : Component {
     SDL_Color color;
 
-    explicit RenderComponent(const SDL_Color c) : color(c) {
+    explicit RenderComponent(const SDL_Color color) : color(color) {
     }
 };

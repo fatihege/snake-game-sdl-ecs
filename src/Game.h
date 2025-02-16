@@ -21,7 +21,7 @@ class Game {
     float dt = 0;
     double lastFrame = 0;
 
-    Direction nextDirection = Direction::NONE;
+    std::queue<Direction> inputQueue;
 
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;

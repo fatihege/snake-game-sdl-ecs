@@ -10,10 +10,19 @@
 #include "core/Utility.h"
 
 void Game::generateFood() {
+    const bool special = Utility::random(1, 10) == 1;
+    float specialTimer = 0.0f;
+
+    if (special) {
+        specialTimer = Utility::random(2.0f, 5.0f);
+        std::cout << "Special timer: " << specialTimer << '\n';
+    }
+
     food = entityManager.createEntity();
-    food->addComponent<TransformComponent>(Utility::random(0, GRID_WIDTH - 1), Utility::random(0, GRID_HEIGHT - 1), CELL_HEIGHT, CELL_HEIGHT);
-    food->addComponent<RenderComponent>(SDL_Color{255, 74, 74, 255});
-    food->addComponent<FoodComponent>();
+    food->addComponent<TransformComponent>(Utility::random(0, GRID_WIDTH - 1), Utility::random(0, GRID_HEIGHT - 1),
+                                           CELL_HEIGHT, CELL_HEIGHT);
+    food->addComponent<RenderComponent>(special ? SDL_Color{214, 99, 255, 255} : SDL_Color{255, 74, 74, 255});
+    food->addComponent<FoodComponent>(special, specialTimer);
 }
 
 Game::~Game() {
@@ -26,7 +35,8 @@ bool Game::init() {
         return false;
     }
 
-    window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GRID_WIDTH * CELL_WIDTH, GRID_HEIGHT * CELL_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GRID_WIDTH * CELL_WIDTH,
+                              GRID_HEIGHT * CELL_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
         std::cerr << "Window Creation Failed: " << SDL_GetError() << '\n';
         return false;
@@ -42,12 +52,13 @@ bool Game::init() {
     movementSystem = new MovementSystem();
     collisionSystem = new CollisionSystem();
 
-    movementSystem->onSelfCollision = [this] {
+    movementSystem->onCollision = [this] {
         this->running = false;
     };
 
     snake = entityManager.createEntity();
-    snake->addComponent<TransformComponent>(Utility::random(0, GRID_WIDTH - 1), Utility::random(0, GRID_HEIGHT - 1), CELL_HEIGHT, CELL_HEIGHT);
+    snake->addComponent<TransformComponent>(Utility::random(0, GRID_WIDTH - 1), Utility::random(0, GRID_HEIGHT - 1),
+                                            CELL_HEIGHT, CELL_HEIGHT);
     snake->addComponent<RenderComponent>(SDL_Color{255, 255, 255, 255});
     snake->addComponent<SnakeComponent>();
 
@@ -80,38 +91,64 @@ void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) running = false;
         else if (event.type == SDL_KEYDOWN) {
-            const Direction currentDirection = snake->getComponent<SnakeComponent>()->direction;
+            Direction newDirection = Direction::NONE;
 
             switch (event.key.keysym.sym) {
                 case SDLK_w:
                 case SDLK_UP:
-                    if (currentDirection != Direction::DOWN) nextDirection = Direction::UP;
+                    newDirection = Direction::UP;
                     break;
                 case SDLK_a:
                 case SDLK_LEFT:
-                    if (currentDirection != Direction::RIGHT) nextDirection = Direction::LEFT;
+                    newDirection = Direction::LEFT;
                     break;
                 case SDLK_s:
                 case SDLK_DOWN:
-                    if (currentDirection != Direction::UP) nextDirection = Direction::DOWN;
+                    newDirection = Direction::DOWN;
                     break;
                 case SDLK_d:
                 case SDLK_RIGHT:
-                    if (currentDirection != Direction::LEFT) nextDirection = Direction::RIGHT;
+                    newDirection = Direction::RIGHT;
                     break;
                 case SDLK_ESCAPE:
                     running = false;
                     break;
-                default: ;
+                default: break;
+            }
+
+            if (newDirection != Direction::NONE) {
+                Direction currentDirection;
+                if (!inputQueue.empty()) currentDirection = inputQueue.back();
+                else currentDirection = snake->getComponent<SnakeComponent>()->direction;
+
+                const bool valid = !(
+                    (currentDirection == Direction::UP && newDirection == Direction::DOWN) ||
+                    (currentDirection == Direction::DOWN && newDirection == Direction::UP) ||
+                    (currentDirection == Direction::LEFT && newDirection == Direction::RIGHT) ||
+                    (currentDirection == Direction::RIGHT && newDirection == Direction::LEFT)
+                );
+
+                if (valid) inputQueue.push(newDirection);
             }
         }
     }
 }
 
 void Game::update() {
-    snake->getComponent<SnakeComponent>()->direction = nextDirection;
+    if (!inputQueue.empty()) {
+        snake->getComponent<SnakeComponent>()->direction = inputQueue.front();
+        inputQueue.pop();
+    }
+
     movementSystem->update();
     collisionSystem->update();
+
+    if (food->isActive()) {
+        if (const auto foodComponent = food->getComponent<FoodComponent>(); foodComponent && foodComponent->special) {
+            foodComponent->timer -= dt;
+            if (foodComponent->timer <= 0.0f) food->destroy();
+        }
+    }
 
     if (!food->isActive()) {
         renderSystem->removeEntity(food);
