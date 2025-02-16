@@ -7,11 +7,12 @@
 #include "components/RenderComponent.h"
 #include "components/SnakeComponent.h"
 #include "components/TransformComponent.h"
+#include "core/Utility.h"
 
 void Game::generateFood() {
     food = entityManager.createEntity();
-    food->addComponent<TransformComponent>(rand() % GRID_WIDTH, rand() % GRID_HEIGHT, CELL_HEIGHT, CELL_HEIGHT);
-    food->addComponent<RenderComponent>(SDL_Color{255, 0, 0, 255});
+    food->addComponent<TransformComponent>(Utility::random(0, GRID_WIDTH - 1), Utility::random(0, GRID_HEIGHT - 1), CELL_HEIGHT, CELL_HEIGHT);
+    food->addComponent<RenderComponent>(SDL_Color{255, 74, 74, 255});
     food->addComponent<FoodComponent>();
 }
 
@@ -25,7 +26,7 @@ bool Game::init() {
         return false;
     }
 
-    window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GRID_WIDTH * CELL_WIDTH, GRID_HEIGHT * CELL_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
         std::cerr << "Window Creation Failed: " << SDL_GetError() << '\n';
         return false;
@@ -41,9 +42,13 @@ bool Game::init() {
     movementSystem = new MovementSystem();
     collisionSystem = new CollisionSystem();
 
+    movementSystem->onSelfCollision = [this] {
+        this->running = false;
+    };
+
     snake = entityManager.createEntity();
-    snake->addComponent<TransformComponent>(rand() % GRID_WIDTH, rand() % GRID_HEIGHT, CELL_HEIGHT, CELL_HEIGHT);
-    snake->addComponent<RenderComponent>(SDL_Color{0, 0, 0, 255});
+    snake->addComponent<TransformComponent>(Utility::random(0, GRID_WIDTH - 1), Utility::random(0, GRID_HEIGHT - 1), CELL_HEIGHT, CELL_HEIGHT);
+    snake->addComponent<RenderComponent>(SDL_Color{255, 255, 255, 255});
     snake->addComponent<SnakeComponent>();
 
     generateFood();
@@ -71,25 +76,28 @@ void Game::run() {
 
 void Game::handleEvents() {
     SDL_Event event;
+
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) running = false;
         else if (event.type == SDL_KEYDOWN) {
+            const Direction currentDirection = snake->getComponent<SnakeComponent>()->direction;
+
             switch (event.key.keysym.sym) {
                 case SDLK_w:
                 case SDLK_UP:
-                    snake->getComponent<SnakeComponent>()->direction = Direction::UP;
+                    if (currentDirection != Direction::DOWN) nextDirection = Direction::UP;
                     break;
                 case SDLK_a:
                 case SDLK_LEFT:
-                    snake->getComponent<SnakeComponent>()->direction = Direction::LEFT;
+                    if (currentDirection != Direction::RIGHT) nextDirection = Direction::LEFT;
                     break;
                 case SDLK_s:
                 case SDLK_DOWN:
-                    snake->getComponent<SnakeComponent>()->direction = Direction::DOWN;
+                    if (currentDirection != Direction::UP) nextDirection = Direction::DOWN;
                     break;
                 case SDLK_d:
                 case SDLK_RIGHT:
-                    snake->getComponent<SnakeComponent>()->direction = Direction::RIGHT;
+                    if (currentDirection != Direction::LEFT) nextDirection = Direction::RIGHT;
                     break;
                 case SDLK_ESCAPE:
                     running = false;
@@ -101,6 +109,7 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
+    snake->getComponent<SnakeComponent>()->direction = nextDirection;
     movementSystem->update();
     collisionSystem->update();
 
@@ -116,7 +125,7 @@ void Game::update() {
 }
 
 void Game::render() const {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
     SDL_RenderClear(renderer);
 
     renderSystem->update();

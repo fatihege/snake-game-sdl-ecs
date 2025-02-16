@@ -5,6 +5,8 @@
 #include "../components/TransformComponent.h"
 
 void RenderSystem::update() {
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
     for (const auto &entity: entities) {
         const auto snake = entity->getComponent<SnakeComponent>();
         const auto transform = entity->getComponent<TransformComponent>();
@@ -16,7 +18,7 @@ void RenderSystem::update() {
                     const int x = snake->body[i].first;
                     const int y = snake->body[i].second;
                     SDL_Rect rect = {x * transform->width, y * transform->height, transform->width, transform->height};
-                    SDL_SetRenderDrawColor(renderer, render->color.r, render->color.g, render->color.b, render->color.a);
+                    SDL_SetRenderDrawColor(renderer, render->color.r, render->color.g, render->color.b, render->color.a - 55);
                     SDL_RenderFillRect(renderer, &rect);
                 }
             }

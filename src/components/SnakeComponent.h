@@ -16,9 +16,8 @@ enum class Direction {
 struct SnakeComponent final : Component {
     std::vector<std::pair<int, int>> body;
     Direction direction = Direction::NONE;
-    double velocity;
 
-    SnakeComponent(): velocity(1) {
+    SnakeComponent() {
         body.emplace_back(10, 10);
     }
 };

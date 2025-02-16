@@ -1,5 +1,6 @@
 #include "MovementSystem.h"
 
+#include "../Game.h"
 #include "../components/SnakeComponent.h"
 #include "../components/TransformComponent.h"
 
@@ -13,22 +14,33 @@ void MovementSystem::update() {
 
             switch (snake->direction) {
                 case Direction::UP:
-                    snake->body[0].second -= snake->velocity;
+                    snake->body[0].second--;
                     break;
                 case Direction::DOWN:
-                    snake->body[0].second += snake->velocity;
+                    snake->body[0].second++;
                     break;
                 case Direction::LEFT:
-                    snake->body[0].first -= snake->velocity;
+                    snake->body[0].first--;
                     break;
                 case Direction::RIGHT:
-                    snake->body[0].first += snake->velocity;
+                    snake->body[0].first++;
                     break;
                 default: ;
             }
 
             transform->x = snake->body[0].first;
             transform->y = snake->body[0].second;
+
+            const bool collidedWithEdge = transform->x < 0 || transform->y < 0 || transform->x > GRID_WIDTH
+                                          || transform->y > GRID_HEIGHT;
+
+            if (onSelfCollision) {
+                if (collidedWithEdge) onSelfCollision();
+
+                if (const std::pair headPos = {transform->x, transform->y};
+                    std::find(snake->body.begin() + 1, snake->body.end(), headPos) != snake->body.end())
+                    onSelfCollision();
+            }
         }
     }
 }

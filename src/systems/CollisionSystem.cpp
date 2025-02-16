@@ -1,7 +1,6 @@
 #include "CollisionSystem.h"
 
 #include <iostream>
-#include <ostream>
 
 #include "../components/FoodComponent.h"
 #include "../components/SnakeComponent.h"

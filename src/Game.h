@@ -1,13 +1,16 @@
 #pragma once
 
+#include <queue>
 #include <SDL_render.h>
 #include <SDL_video.h>
 
+#include "components/SnakeComponent.h"
 #include "core/EntityManager.h"
 #include "systems/CollisionSystem.h"
 #include "systems/MovementSystem.h"
 #include "systems/RenderSystem.h"
 
+enum class Direction;
 constexpr int GRID_WIDTH = 30;
 constexpr int GRID_HEIGHT = 30;
 constexpr int CELL_WIDTH = 20;
@@ -17,6 +20,8 @@ class Game {
     bool running = false;
     float dt = 0;
     double lastFrame = 0;
+
+    Direction nextDirection = Direction::NONE;
 
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;

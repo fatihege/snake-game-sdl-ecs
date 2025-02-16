@@ -25,6 +25,8 @@ add_executable(snake_game_sdl_ecs src/main.cpp
         src/systems/MovementSystem.h
         src/systems/CollisionSystem.cpp
         src/systems/CollisionSystem.h
+        src/core/Utility.cpp
+        src/core/Utility.h
 )
 
 target_link_libraries(snake_game_sdl_ecs
