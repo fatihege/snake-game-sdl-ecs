@@ -35,8 +35,8 @@ void MovementSystem::update() {
                 if (transform->x < 0 || transform->y < 0 || transform->x > GRID_WIDTH || transform->y > GRID_HEIGHT)
                     onCollision();
 
-                if (const std::pair headPos = {transform->x, transform->y};
-                    std::find(snake->body.begin() + 1, snake->body.end(), headPos) != snake->body.end())
+                if (std::find(snake->body.begin() + 1, snake->body.end(), std::make_pair(transform->x, transform->y))
+                    != snake->body.end())
                     onCollision();
             }
         }

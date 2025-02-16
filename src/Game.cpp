@@ -10,7 +10,9 @@
 #include "core/Utility.h"
 
 void Game::generateFood() {
-    const bool special = Utility::random(1, 10) == 1;
+    const bool special = Utility::random(0, 10) == 1;
+    int x, y;
+
     float specialTimer = 0.0f;
 
     if (special) {
@@ -18,9 +20,14 @@ void Game::generateFood() {
         std::cout << "Special timer: " << specialTimer << '\n';
     }
 
+    const auto snakeComponent = snake->getComponent<SnakeComponent>();
+    do {
+        x = Utility::random(0, GRID_WIDTH - 1);
+        y = Utility::random(0, GRID_HEIGHT - 1);
+    } while (std::ranges::find(snakeComponent->body, std::make_pair(x, y)) != snakeComponent->body.end());
+
     food = entityManager.createEntity();
-    food->addComponent<TransformComponent>(Utility::random(0, GRID_WIDTH - 1), Utility::random(0, GRID_HEIGHT - 1),
-                                           CELL_HEIGHT, CELL_HEIGHT);
+    food->addComponent<TransformComponent>(x, y, CELL_HEIGHT, CELL_HEIGHT);
     food->addComponent<RenderComponent>(special ? SDL_Color{214, 99, 255, 255} : SDL_Color{255, 74, 74, 255});
     food->addComponent<FoodComponent>(special, specialTimer);
 }
