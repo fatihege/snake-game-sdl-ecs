@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <SDL.h>
+#include <string>
 
 #include "components/FoodComponent.h"
 #include "components/RenderComponent.h"
@@ -10,7 +11,7 @@
 #include "core/Utility.h"
 
 void Game::generateFood() {
-    const bool special = Utility::random(0, 10) == 1;
+    const bool special = Utility::random(0, 15) == 1;
     int x, y;
 
     float specialTimer = 0.0f;
@@ -43,7 +44,7 @@ bool Game::init() {
     }
 
     window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, GRID_WIDTH * CELL_WIDTH,
-                              GRID_HEIGHT * CELL_HEIGHT, SDL_WINDOW_SHOWN);
+                              GRID_HEIGHT * CELL_HEIGHT + 50, SDL_WINDOW_SHOWN);
     if (!window) {
         std::cerr << "Window Creation Failed: " << SDL_GetError() << '\n';
         return false;
@@ -52,6 +53,17 @@ bool Game::init() {
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
         std::cerr << "Renderer Creation Failed: " << SDL_GetError() << '\n';
+        return false;
+    }
+
+    if (TTF_Init() < 0) {
+        std::cerr << "TTF Initialization Failed: " << TTF_GetError() << '\n';
+        return false;
+    }
+
+    font = TTF_OpenFont("../assets/font.ttf", 24);
+    if (!font) {
+        std::cerr << "Failed to load font: " << TTF_GetError() << '\n';
         return false;
     }
 
@@ -174,6 +186,29 @@ void Game::render() const {
 
     renderSystem->update();
 
+    const int score = static_cast<int>(snake->getComponent<SnakeComponent>()->body.size()) - 1;
+    const std::string scoreText = "Score: " + std::to_string(score);
+
+    constexpr SDL_Color textColor = {220, 220, 220, 255};
+
+    if (SDL_Surface* textSurface = TTF_RenderText_Solid(font, scoreText.c_str(), textColor)) {
+        if (SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface)) {
+            SDL_Rect dstRect;
+            dstRect.x = (GRID_WIDTH * CELL_WIDTH - textSurface->w) / 2;
+            dstRect.y = GRID_HEIGHT * CELL_HEIGHT + (50 - textSurface->h) / 2;
+            dstRect.w = textSurface->w;
+            dstRect.h = textSurface->h;
+
+            SDL_RenderCopy(renderer, textTexture, nullptr, &dstRect);
+            SDL_DestroyTexture(textTexture);
+        }
+
+        SDL_FreeSurface(textSurface);
+    } else std::cerr << "Failed to render text surface: " << TTF_GetError() << '\n';
+
+    SDL_SetRenderDrawColor(renderer, 120, 120, 120, 50);
+    SDL_RenderDrawLine(renderer, 0, GRID_HEIGHT * CELL_HEIGHT, GRID_WIDTH * CELL_WIDTH, GRID_HEIGHT * CELL_HEIGHT);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -181,6 +216,9 @@ void Game::clean() const {
     delete renderSystem;
     delete movementSystem;
     delete collisionSystem;
+
+    TTF_CloseFont(font);
+    TTF_Quit();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

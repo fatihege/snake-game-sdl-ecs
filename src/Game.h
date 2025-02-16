@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <SDL_render.h>
+#include <SDL_ttf.h>
 #include <SDL_video.h>
 
 #include "components/SnakeComponent.h"
@@ -25,6 +26,7 @@ class Game {
 
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
+    TTF_Font *font = nullptr;
 
     EntityManager entityManager;
     RenderSystem *renderSystem = nullptr;
