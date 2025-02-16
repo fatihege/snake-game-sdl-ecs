@@ -72,7 +72,7 @@ bool Game::init() {
     collisionSystem = new CollisionSystem();
 
     movementSystem->onCollision = [this] {
-        this->running = false;
+        this->gameOver = true;
     };
 
     snake = entityManager.createEntity();
@@ -90,6 +90,7 @@ bool Game::init() {
     collisionSystem->addEntity(food);
 
     running = true;
+    gameOver = false;
     return true;
 }
 
@@ -97,7 +98,7 @@ void Game::run() {
     while (running) {
         dt = (SDL_GetTicks() - lastFrame) / 1000.0;
         handleEvents();
-        update();
+        if (!gameOver) update();
         render();
         lastFrame = SDL_GetTicks();
         SDL_Delay(100);
@@ -110,44 +111,47 @@ void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) running = false;
         else if (event.type == SDL_KEYDOWN) {
-            Direction newDirection = Direction::NONE;
+            if (gameOver) running = false;
+            else {
+                auto newDirection = Direction::NONE;
 
-            switch (event.key.keysym.sym) {
-                case SDLK_w:
-                case SDLK_UP:
-                    newDirection = Direction::UP;
+                switch (event.key.keysym.sym) {
+                    case SDLK_w:
+                    case SDLK_UP:
+                        newDirection = Direction::UP;
                     break;
-                case SDLK_a:
-                case SDLK_LEFT:
-                    newDirection = Direction::LEFT;
+                    case SDLK_a:
+                    case SDLK_LEFT:
+                        newDirection = Direction::LEFT;
                     break;
-                case SDLK_s:
-                case SDLK_DOWN:
-                    newDirection = Direction::DOWN;
+                    case SDLK_s:
+                    case SDLK_DOWN:
+                        newDirection = Direction::DOWN;
                     break;
-                case SDLK_d:
-                case SDLK_RIGHT:
-                    newDirection = Direction::RIGHT;
+                    case SDLK_d:
+                    case SDLK_RIGHT:
+                        newDirection = Direction::RIGHT;
                     break;
-                case SDLK_ESCAPE:
-                    running = false;
+                    case SDLK_ESCAPE:
+                        running = false;
                     break;
-                default: break;
-            }
+                    default: break;
+                }
 
-            if (newDirection != Direction::NONE) {
-                Direction currentDirection;
-                if (!inputQueue.empty()) currentDirection = inputQueue.back();
-                else currentDirection = snake->getComponent<SnakeComponent>()->direction;
+                if (newDirection != Direction::NONE) {
+                    Direction currentDirection;
+                    if (!inputQueue.empty()) currentDirection = inputQueue.back();
+                    else currentDirection = snake->getComponent<SnakeComponent>()->direction;
 
-                const bool valid = !(
-                    (currentDirection == Direction::UP && newDirection == Direction::DOWN) ||
-                    (currentDirection == Direction::DOWN && newDirection == Direction::UP) ||
-                    (currentDirection == Direction::LEFT && newDirection == Direction::RIGHT) ||
-                    (currentDirection == Direction::RIGHT && newDirection == Direction::LEFT)
-                );
+                    const bool valid = !(
+                        (currentDirection == Direction::UP && newDirection == Direction::DOWN) ||
+                        (currentDirection == Direction::DOWN && newDirection == Direction::UP) ||
+                        (currentDirection == Direction::LEFT && newDirection == Direction::RIGHT) ||
+                        (currentDirection == Direction::RIGHT && newDirection == Direction::LEFT)
+                    );
 
-                if (valid) inputQueue.push(newDirection);
+                    if (valid) inputQueue.push(newDirection);
+                }
             }
         }
     }
@@ -187,12 +191,13 @@ void Game::render() const {
     renderSystem->update();
 
     const int score = static_cast<int>(snake->getComponent<SnakeComponent>()->body.size()) - 1;
-    const std::string scoreText = "Score: " + std::to_string(score);
+    std::string scoreText = "Score: " + std::to_string(score);
+    if (gameOver) scoreText += "  |  Game Over - Press any key to exit";
 
     constexpr SDL_Color textColor = {220, 220, 220, 255};
 
-    if (SDL_Surface* textSurface = TTF_RenderText_Solid(font, scoreText.c_str(), textColor)) {
-        if (SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface)) {
+    if (SDL_Surface *textSurface = TTF_RenderText_Solid(font, scoreText.c_str(), textColor)) {
+        if (SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface)) {
             SDL_Rect dstRect;
             dstRect.x = (GRID_WIDTH * CELL_WIDTH - textSurface->w) / 2;
             dstRect.y = GRID_HEIGHT * CELL_HEIGHT + (50 - textSurface->h) / 2;

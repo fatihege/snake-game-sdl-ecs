@@ -19,6 +19,7 @@ constexpr int CELL_HEIGHT = 20;
 
 class Game {
     bool running = false;
+    bool gameOver = false;
     float dt = 0;
     double lastFrame = 0;
 
